@@ -7,7 +7,7 @@ import LiveDataWrapper from '@/components/LiveDataWrapper';
 import Converter from '@/components/Converter';
 
 const Page = async ({ params }: NextPageProps) => {
-  const { id } = await params;
+  const { id } = params;
 
   const [coinData, coinOHLCData] = await Promise.all([
     fetcher<CoinDetailsData>(`/coins/${id}`, {
@@ -21,10 +21,23 @@ const Page = async ({ params }: NextPageProps) => {
     }),
   ]);
 
-  const platform = coinData.asset_platform_id
-    ? coinData.detail_platforms?.[coinData.asset_platform_id]
-    : null;
-  const network = platform?.geckoterminal_url.split('/')[3] || null;
+  // 🔥 CRITICAL: guard against rate limit / API failure
+  if (!coinData || !coinOHLCData) {
+    return (
+      <main>
+        <h2>Failed to load coin data.</h2>
+        <p>Please try again in a few seconds.</p>
+      </main>
+    );
+  }
+
+  const platform =
+    coinData.asset_platform_id &&
+      coinData.detail_platforms?.[coinData.asset_platform_id]
+      ? coinData.detail_platforms[coinData.asset_platform_id]
+      : null;
+
+  const network = platform?.geckoterminal_url?.split('/')[3] || null;
   const contractAddress = platform?.contract_address || null;
 
   const pool = await getPools(id, network, contractAddress);
@@ -32,32 +45,32 @@ const Page = async ({ params }: NextPageProps) => {
   const coinDetails = [
     {
       label: 'Market Cap',
-      value: formatCurrency(coinData.market_data.market_cap.usd),
+      value: formatCurrency(coinData.market_data?.market_cap?.usd),
     },
     {
       label: 'Market Cap Rank',
-      value: `# ${coinData.market_cap_rank}`,
+      value: `# ${coinData.market_cap_rank ?? '-'}`,
     },
     {
       label: 'Total Volume',
-      value: formatCurrency(coinData.market_data.total_volume.usd),
+      value: formatCurrency(coinData.market_data?.total_volume?.usd),
     },
     {
       label: 'Website',
       value: '-',
-      link: coinData.links.homepage[0],
+      link: coinData.links?.homepage?.[0],
       linkText: 'Homepage',
     },
     {
       label: 'Explorer',
       value: '-',
-      link: coinData.links.blockchain_site[0],
+      link: coinData.links?.blockchain_site?.[0],
       linkText: 'Explorer',
     },
     {
       label: 'Community',
       value: '-',
-      link: coinData.links.subreddit_url,
+      link: coinData.links?.subreddit_url,
       linkText: 'Community',
     },
   ];
@@ -65,7 +78,12 @@ const Page = async ({ params }: NextPageProps) => {
   return (
     <main id="coin-details-page">
       <section className="primary">
-        <LiveDataWrapper coinId={id} poolId={pool.id} coin={coinData} coinOHLCData={coinOHLCData}>
+        <LiveDataWrapper
+          coinId={id}
+          poolId={pool?.id}
+          coin={coinData}
+          coinOHLCData={coinOHLCData}
+        >
           <h4>Exchange Listings</h4>
         </LiveDataWrapper>
       </section>
@@ -73,8 +91,8 @@ const Page = async ({ params }: NextPageProps) => {
       <section className="secondary">
         <Converter
           symbol={coinData.symbol}
-          icon={coinData.image.small}
-          priceList={coinData.market_data.current_price}
+          icon={coinData.image?.small}
+          priceList={coinData.market_data?.current_price}
         />
 
         <div className="details">
@@ -103,4 +121,5 @@ const Page = async ({ params }: NextPageProps) => {
     </main>
   );
 };
+
 export default Page;

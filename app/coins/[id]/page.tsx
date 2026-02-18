@@ -10,18 +10,17 @@ const Page = async ({ params }: NextPageProps) => {
   const { id } = params;
 
   const [coinData, coinOHLCData] = await Promise.all([
-    fetcher<CoinDetailsData>(`/coins/${id}`, {
-      dex_pair_format: 'contract_address',
-    }),
+    // ✅ Removed Pro-only parameter
+    fetcher<CoinDetailsData>(`/coins/${id}`),
+
+    // ✅ Removed interval + precision (Pro-only)
     fetcher<OHLCData>(`/coins/${id}/ohlc`, {
       vs_currency: 'usd',
       days: 1,
-      interval: 'hourly',
-      precision: 'full',
     }),
   ]);
 
-  // 🔥 CRITICAL: guard against rate limit / API failure
+  // ✅ Guard against API failure / rate limit
   if (!coinData || !coinOHLCData) {
     return (
       <main>
@@ -33,7 +32,7 @@ const Page = async ({ params }: NextPageProps) => {
 
   const platform =
     coinData.asset_platform_id &&
-      coinData.detail_platforms?.[coinData.asset_platform_id]
+    coinData.detail_platforms?.[coinData.asset_platform_id]
       ? coinData.detail_platforms[coinData.asset_platform_id]
       : null;
 

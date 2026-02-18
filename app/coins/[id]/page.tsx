@@ -3,8 +3,6 @@ import { fetcher } from '@/lib/coingecko.actions';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import LiveDataWrapper from '@/components/LiveDataWrapper';
-import Converter from '@/components/Converter';
 
 const Page = async ({ params }: NextPageProps) => {
   const { id } = params;
@@ -56,23 +54,14 @@ const Page = async ({ params }: NextPageProps) => {
   return (
     <main id="coin-details-page">
       <section className="primary">
-        <LiveDataWrapper
-          coinId={id}
-          poolId=""
-          coin={coinData}
-          coinOHLCData={coinOHLCData}
-        >
-          <h4>Exchange Listings</h4>
-        </LiveDataWrapper>
+        <h1>{coinData.name}</h1>
+        <p>
+          Current Price:{' '}
+          {formatCurrency(coinData.market_data?.current_price?.usd)}
+        </p>
       </section>
 
       <section className="secondary">
-        <Converter
-          symbol={coinData.symbol}
-          icon={coinData.image?.small}
-          priceList={coinData.market_data?.current_price}
-        />
-
         <div className="details">
           <h4>Coin Details</h4>
 

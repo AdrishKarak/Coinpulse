@@ -1,5 +1,5 @@
 import React from 'react';
-import { fetcher, getPools } from '@/lib/coingecko.actions';
+import { fetcher } from '@/lib/coingecko.actions';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
@@ -10,17 +10,13 @@ const Page = async ({ params }: NextPageProps) => {
   const { id } = params;
 
   const [coinData, coinOHLCData] = await Promise.all([
-    // ✅ Removed Pro-only parameter
     fetcher<CoinDetailsData>(`/coins/${id}`),
-
-    // ✅ Removed interval + precision (Pro-only)
     fetcher<OHLCData>(`/coins/${id}/ohlc`, {
       vs_currency: 'usd',
       days: 1,
     }),
   ]);
 
-  // ✅ Guard against API failure / rate limit
   if (!coinData || !coinOHLCData) {
     return (
       <main>
@@ -29,17 +25,6 @@ const Page = async ({ params }: NextPageProps) => {
       </main>
     );
   }
-
-  const platform =
-    coinData.asset_platform_id &&
-    coinData.detail_platforms?.[coinData.asset_platform_id]
-      ? coinData.detail_platforms[coinData.asset_platform_id]
-      : null;
-
-  const network = platform?.geckoterminal_url?.split('/')[3] || null;
-  const contractAddress = platform?.contract_address || null;
-
-  const pool = await getPools(id, network, contractAddress);
 
   const coinDetails = [
     {
@@ -66,12 +51,6 @@ const Page = async ({ params }: NextPageProps) => {
       link: coinData.links?.blockchain_site?.[0],
       linkText: 'Explorer',
     },
-    {
-      label: 'Community',
-      value: '-',
-      link: coinData.links?.subreddit_url,
-      linkText: 'Community',
-    },
   ];
 
   return (
@@ -79,7 +58,7 @@ const Page = async ({ params }: NextPageProps) => {
       <section className="primary">
         <LiveDataWrapper
           coinId={id}
-          poolId={pool?.id}
+          poolId=""
           coin={coinData}
           coinOHLCData={coinOHLCData}
         >
@@ -100,7 +79,7 @@ const Page = async ({ params }: NextPageProps) => {
           <ul className="details-grid">
             {coinDetails.map(({ label, value, link, linkText }, index) => (
               <li key={index}>
-                <p className={label}>{label}</p>
+                <p>{label}</p>
 
                 {link ? (
                   <div className="link">
@@ -110,7 +89,7 @@ const Page = async ({ params }: NextPageProps) => {
                     <ArrowUpRight size={16} />
                   </div>
                 ) : (
-                  <p className="text-base font-medium">{value}</p>
+                  <p>{value}</p>
                 )}
               </li>
             ))}
